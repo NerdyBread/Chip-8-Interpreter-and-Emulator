@@ -13,7 +13,7 @@
 This is my first real "resume worthy" project I would say. I'm actually proud of it and excited for what's next.
 I tried to tackle this a number of years ago, but it didn't go well.
 I didn't test well nor did I know how to, and I relied far too much on doing exactly what my resources did, even when I knew on a 
-gut level that it may not have been the best way. I also jumped into coding too quickly/with not enough research beforehand, I didn't
+gut level that it may not have been the best way. I also jumped into coding too quickly/with not enough research beforehand; I didn't
 even really grasp the difference between the interpreter for the chip8 language and the emulator for the machine running it.
 I'm beyond happy with the way I did it this time, and the rush I got when the code that I truly wrote was running any ROM I threw at
 it felt so good.
