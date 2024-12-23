@@ -86,6 +86,9 @@ class Interpreter:
                 # Call subroutine at addr nnn
                 self.stack.append(self.pc)
                 # print([hex(val) for val in self.stack])
+                if len(self.stack) > 16:
+                    raise StackError # This theoretically shouldn't happen
+                # Most programs don't even use 8 but this is more to be accurate
                 self.pc = addr
                         
             case 0x3000: # 0x3xkk
@@ -339,4 +342,7 @@ class Interpreter:
         self.draw_flag = state
         
 class OpcodeNotFound(Exception):
+    pass
+
+class StackError(Exception):
     pass

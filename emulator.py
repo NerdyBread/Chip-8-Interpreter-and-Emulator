@@ -19,6 +19,7 @@ Registers:
     "Pseudoregisters" (Not accessed by the programs):
     Stack - array of sixteen two byte values
     Stack pointer - points to current topmost level of the stack
+    (I did this slightly differently)
     Program counter - 16 bits used to store the address of whatever instruction is currently being executed
     
 Hexadecimal Keypad:
