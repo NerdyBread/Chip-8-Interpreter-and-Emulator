@@ -51,7 +51,7 @@ from chip8 import Interpreter
 from pixel import Pixel
 from settings import Settings
 
-class VM:
+class Emulator:
     def __init__(self):
         self.settings = Settings()
         self.memory = [0x00] * 0x1000 # Don't touch 0x0 - 0x1FF
@@ -59,25 +59,7 @@ class VM:
         self.I = 0x0000
         self.delay_timer = 0x0
         self.sound_timer = 0x0
-        # 750 instructions per second
-        # .750 instructions per millisecond
-        # 1/750 = seconds per instruction
-        # *1000 = milliseconds per instruction
-        self.timer_pause = int((1 / self.settings.timer_frequency) * 1000) # In millisecods
-        # Setup timers to go down by one every 1/60 seconds
         pygame.init()
-        self.TIMERS_DOWN = pygame.USEREVENT + 1
-        pygame.time.set_timer(self.TIMERS_DOWN, self.timer_pause)
-        
-        # Setup instructions to run the number of times per second
-        # specified in settings.py
-        between_instructions = 1 / self.settings.instructions_per_second
-        milliseconds_per = int(between_instructions * 1000)
-        self.RUN_INSTRUCTION = pygame.USEREVENT + 2
-        pygame.time.set_timer(self.RUN_INSTRUCTION, milliseconds_per)
-        
-        self.TRY_PLAY_SOUND = pygame.USEREVENT + 3
-        pygame.time.set_timer(self.TRY_PLAY_SOUND, 40)
 
         
         # Set up key callbacks
@@ -158,6 +140,7 @@ class VM:
         file_name = self.get_rom_file()
         self.load_rom(file_name)
         running = True
+        self.setup_timers()
         while running:
             # Pygame event handler
             for event in pygame.event.get():
@@ -206,6 +189,18 @@ class VM:
         if self.get_sound_timer():
             mixer.music.play()
             
-if __name__ == "__main__":       
-    machine = VM()
-    machine.run()
+    def setup_timers(self):
+        self.timer_pause = int((1 / self.settings.timer_frequency) * 1000) # In millisecods
+        # Setup timers to go down by one every 1/60 seconds
+        self.TIMERS_DOWN = pygame.USEREVENT + 1
+        pygame.time.set_timer(self.TIMERS_DOWN, self.timer_pause)
+        
+        # Setup instructions to run the number of times per second
+        # specified in settings.py
+        between_instructions = 1 / self.settings.instructions_per_second
+        milliseconds_per = int(between_instructions * 1000)
+        self.RUN_INSTRUCTION = pygame.USEREVENT + 2
+        pygame.time.set_timer(self.RUN_INSTRUCTION, milliseconds_per)
+        
+        self.TRY_PLAY_SOUND = pygame.USEREVENT + 3
+        pygame.time.set_timer(self.TRY_PLAY_SOUND, 40)
