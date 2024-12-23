@@ -43,8 +43,6 @@ Outputs:
     - A buzzer plays whenever the above mentioned sound timer is not 0
 
 """
-from time import sleep, time # For testing ideas
-
 import pygame
 from pygame import mixer
 
