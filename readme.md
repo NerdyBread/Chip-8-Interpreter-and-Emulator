@@ -17,6 +17,7 @@ gut level that it may not have been the best way. I also jumped into coding too 
 even really grasp the difference between the interpreter for the chip8 language and the emulator for the machine running it.
 I'm beyond happy with the way I did it this time, and the rush I got when the code that I truly wrote was running any ROM I threw at
 it felt so good.
+Definitely have some things to tinker with here before I do anything more advanced, namely the pygame rendering is very... blinky? I'm struggling to find the right way to describe it but the graphics just are drawn and then disappear and then are redrawn really fast, there's no fade or anything
 
 ## Resources:
 
