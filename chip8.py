@@ -226,14 +226,14 @@ class Interpreter:
                 match (opcode & 0x000F):
                     case 0x000E: # Ex9E
                         # Skip next instruction if key at value Vx is pressed
-                        key_idx = self.v[x]
+                        key_idx = self.v[x] & 0xF
                         if self.key_buffer[key_idx]:
                             self.pc += 2
                         self.pc += 2
                     
                     case 0x0001: # ExA1
                         # Skip next instruction if key at value Vx isn't pressed
-                        key_idx = self.v[x]
+                        key_idx = self.v[x] & 0xF
                         if not self.key_buffer[key_idx]:
                             self.pc += 2
                         self.pc += 2
@@ -286,7 +286,7 @@ class Interpreter:
                     
                     case 0x0029: # Fx29
                         # Set I to location of sprite for digit Vx
-                        digit = self.v[x]
+                        digit = self.v[x] & 0xF
                         self.I = digit * 5 # First byte of 5 in memory
                         self.pc += 2
                     
