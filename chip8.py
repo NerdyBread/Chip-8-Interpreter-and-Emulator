@@ -66,14 +66,14 @@ class Interpreter:
         
         match (opcode & 0xF000): # Check highest 4 bits
             case 0x0000: # 0x0???
-                match (opcode & 0x000F):
-                    case (0x0000): # 0x00E0
+                match (opcode & 0x0FFF):
+                    case (0x00E0): # 0x00E0
                         # Clear the display
                         self.empty_screen_buffer()
                         self.set_draw_flag(True)
                         self.pc += 2
                         
-                    case (0x000E): # 0x00EE
+                    case (0x00EE): # 0x00EE
                         # Return from current subroutine
                         self.pc = self.stack.pop() + 2
                         # Tricky bug, if you don't add the +2 it loops
@@ -223,15 +223,15 @@ class Interpreter:
                 self.pc += 2
             
             case 0xE000:
-                match (opcode & 0x000F):
-                    case 0x000E: # Ex9E
+                match (opcode & 0x00FF):
+                    case 0x009E: # Ex9E
                         # Skip next instruction if key at value Vx is pressed
                         key_idx = self.v[x] & 0xF
                         if self.key_buffer[key_idx]:
                             self.pc += 2
                         self.pc += 2
                     
-                    case 0x0001: # ExA1
+                    case 0x00A1: # ExA1
                         # Skip next instruction if key at value Vx isn't pressed
                         key_idx = self.v[x] & 0xF
                         if not self.key_buffer[key_idx]:
