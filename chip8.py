@@ -70,7 +70,7 @@ class Interpreter:
                     case (0x0000): # 0x00E0
                         # Clear the display
                         self.empty_screen_buffer()
-                        self.draw_flag = True
+                        self.set_draw_flag(True)
                         self.pc += 2
                         
                     case (0x000E): # 0x00EE
@@ -219,7 +219,7 @@ class Interpreter:
                         current_bit = self.screen_buffer[row_index][x_idx]
                         new_state = comparison_bit ^ current_bit
                         self.screen_buffer[row_index][x_idx] = new_state
-                self.draw_flag = True
+                self.set_draw_flag(True)
                 self.pc += 2
             
             case 0xE000:
