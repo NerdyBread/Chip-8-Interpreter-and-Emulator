@@ -8,5 +8,5 @@ class Settings:
         self.pixels_per_bit = 15
         
         # Emulator config
-        self.instructions_per_second = 750
-        self.timer_frequency = 60 # Hz
+        self.instructions_per_second = 500
+        self.refresh_rate = 60 # Hz

@@ -59,7 +59,6 @@ class Emulator:
         self.delay_timer = 0x0
         self.sound_timer = 0x0
         pygame.init()
-
         
         # Set up key callbacks
         self.KEY_MAP = {
@@ -73,6 +72,7 @@ class Emulator:
     
         self.setup_display()
         self.interpreter = Interpreter(self)
+        self.instructions_per_second = self.settings.instructions_per_second
         
         sound_file = "sound.wav"
         mixer.init()
@@ -107,14 +107,17 @@ class Emulator:
         
     def get_rom_file(self):
         """Prompts user to load in a .ch8 ROM file"""
-        return input("Enter Chip8 ROM file name: ")
+        return "ROM Files/" + input("Enter Chip8 ROM file name: ")
         
     def load_rom(self, fn):
+        """Loads in a given ROM file starting at 0x200"""
         file = open(fn, 'rb').read()
         for i in range(len(file)):
             self.memory[0x200+i] = file[i]
+            # This method of filling an empty list rather than .append is a size check
     
     def display_handler(self):
+        """Draws the Chip-8 screen buffer to the pygame screen"""
         for y, row in enumerate(self.pixels):
             for x, pixel in enumerate(row):
                 # Get the pygame surface for the pixel
@@ -143,22 +146,29 @@ class Emulator:
         while running:
             # Pygame event handler
             for event in pygame.event.get():
-                if event == pygame.QUIT:
+                if event.type == pygame.QUIT:
                     running = False
-                # Handle timers
-                if event.type == self.TIMERS_DOWN:
-                    self.timers_down()
                 # Handle cpu cycle
-                if event.type == self.RUN_INSTRUCTION:
+                if event.type == self.NEW_FRAME:
                     # next = hex(self.interpreter.get_next_instruction())
                     # If I ever want to make a debugger
-                    self.interpreter.cycle()
-                # Handle display
-                if self.interpreter.get_draw_flag():
-                    self.display_handler()
-                    self.interpreter.set_draw_flag(False)
                     
-                # Handle keyboard
+                    # Handle sound and delay timers       
+                    self.timers_down()
+                    
+                    i = 0
+                    while i < self.instructions_per_frame:
+                        i += 1
+                        self.interpreter.cycle()
+                        
+                        # Handle display
+                        if self.interpreter.get_draw_flag():
+                            self.display_handler()
+                            self.interpreter.set_draw_flag(False)                    
+                    
+                # ~~Handle I/O with misc pygame events~~
+                
+                # Keyboard
                 if event.type == pygame.KEYDOWN:
                     if event.key in self.KEY_MAP:
                         idx = self.KEY_MAP[event.key]
@@ -168,7 +178,8 @@ class Emulator:
                     if event.key in self.KEY_MAP:
                         idx = self.KEY_MAP[event.key]
                         self.key_buffer[idx] = 0
-                            
+                
+                # Sound           
                 if event.type == self.TRY_PLAY_SOUND:
                     self.play_sound()
                         
@@ -189,17 +200,15 @@ class Emulator:
             mixer.music.play()
             
     def setup_timers(self):
-        self.timer_pause = int((1 / self.settings.timer_frequency) * 1000) # In millisecods
-        # Setup timers to go down by one every 1/60 seconds
-        self.TIMERS_DOWN = pygame.USEREVENT + 1
-        pygame.time.set_timer(self.TIMERS_DOWN, self.timer_pause)
+        self.refresh_rate = self.settings.refresh_rate
+        self.frame_time = (1 / self.refresh_rate) * 1000 # milliseconds
+        instructions_per_second = self.settings.instructions_per_second
+        # Ex) 660 per second / 60 fps = 10 instructions per frame
+        self.instructions_per_frame = instructions_per_second // self.refresh_rate
         
-        # Setup instructions to run the number of times per second
-        # specified in settings.py
-        between_instructions = 1 / self.settings.instructions_per_second
-        milliseconds_per = int(between_instructions * 1000)
-        self.RUN_INSTRUCTION = pygame.USEREVENT + 2
-        pygame.time.set_timer(self.RUN_INSTRUCTION, milliseconds_per)
+        self.NEW_FRAME = pygame.USEREVENT + 1
+        pygame.time.set_timer(self.NEW_FRAME, int(self.frame_time))
         
-        self.TRY_PLAY_SOUND = pygame.USEREVENT + 3
-        pygame.time.set_timer(self.TRY_PLAY_SOUND, 40)
+        self.TRY_PLAY_SOUND = pygame.USEREVENT + 2
+        pygame.time.set_timer(self.TRY_PLAY_SOUND, 40) # 40 is basically a random number
+        # I'll experiment with it at some point
