@@ -162,10 +162,8 @@ class Emulator:
                         self.interpreter.cycle()
                         
                         # Handle display
-                        if self.interpreter.get_draw_flag():
-                            self.display_handler()
-                            self.interpreter.set_draw_flag(False)                    
-                    
+                        self.display_handler()
+                                            
                 # ~~Handle I/O with misc pygame events~~
                 
                 # Keyboard

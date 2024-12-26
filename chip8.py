@@ -20,7 +20,6 @@ class Interpreter:
         self.stored_key = None # For Fx0A
         self.empty_screen_buffer()
         # Flags to make execution a little smoother
-        self.draw_flag = True
         self.waiting_for_press = False
         
         # Load in the chip8 hexadecimal sprite fontset
@@ -71,7 +70,6 @@ class Interpreter:
                     case (0x00E0): # 0x00E0
                         # Clear the display
                         self.empty_screen_buffer()
-                        self.set_draw_flag(True)
                         
                     case (0x00EE): # 0x00EE
                         # Return from current subroutine
@@ -214,7 +212,6 @@ class Interpreter:
                         if current_bit == 1 and new_state == 0:
                             self.v[0xF] = 1
                         self.screen_buffer[row_index][x_idx] = new_state
-                self.set_draw_flag(True)
             
             case 0xE000:
                 match (opcode & 0x00FF):
@@ -321,12 +318,6 @@ class Interpreter:
     def get_kk(self, opcode):
         """Return the lowest byte of the instruction"""
         return opcode & 0x00FF
-
-    def get_draw_flag(self):
-        return self.draw_flag
-    
-    def set_draw_flag(self, state):
-        self.draw_flag = state
         
 class OpcodeNotFound(Exception):
     pass
