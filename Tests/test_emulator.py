@@ -6,12 +6,12 @@ import pygame
 source_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, source_path)
 
-from emulator import VM
+from emulator import Emulator
 
 class TestEmulator:
     def single_pixel_test(self, x, y):
         """Not a pytest test"""
-        self.machine = VM()
+        self.machine = Emulator()
         pixel = self.machine.pixels[y][x]
         pixel.set_state(1)
         pygame.draw.rect(self.machine.screen, self.machine.on_color, pixel.get_rect())

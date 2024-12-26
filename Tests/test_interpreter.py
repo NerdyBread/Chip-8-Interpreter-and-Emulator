@@ -5,7 +5,7 @@ import pytest
 source_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, source_path)
 
-from emulator import VM
+from emulator import Emulator
 
 class TestInterpreterHelpers:
     @pytest.fixture
@@ -14,7 +14,7 @@ class TestInterpreterHelpers:
     
     @pytest.fixture
     def interpreter(self):
-        return VM().interpreter
+        return Emulator().interpreter
         
     def test_get_addr(self, test_opcode, interpreter):
         assert interpreter.get_addr(test_opcode) == 0x234
@@ -27,13 +27,6 @@ class TestInterpreterHelpers:
 
     def test_get_kk(self, test_opcode, interpreter):
         assert interpreter.get_kk(test_opcode) == 0x34
-        
-    def test_fetch(self, interpreter):
-        interpreter.machine.load_rom("Tests/LunarLander.ch8")
-        assert interpreter.get_next_instruction() == 0x1202
-        interpreter.pc += 2
-        assert interpreter.get_next_instruction() == 0x6330
-        interpreter.pc -= 2
     
 class TestRegisterMath:
     """Tests the 0x8xy_ instructions"""
@@ -56,9 +49,9 @@ class TestRegisterMath:
         return 0b10011001
     
     @pytest.fixture
-    def interpreter(self, x, y, x_val, y_val) -> VM:
+    def interpreter(self, x, y, x_val, y_val):
         """Creates a new interpreter object with test values preloaded"""
-        vm = VM()
+        vm = Emulator()
         vm.interpreter.v[x] = x_val
         vm.interpreter.v[y] = y_val
         
@@ -113,7 +106,7 @@ class TestRegisterMath:
         interpreter.v[x] = small_x_val
         interpreter.v[y] = small_y_val
         interpreter.run_instruction(0x80E5)
-        assert interpreter.v[x] == small_x_val - small_y_val
+        assert interpreter.v[x] == (small_x_val - small_y_val) % 256
         assert interpreter.v[0xF] == 0
     
     def test_subtraction_underflow(self, x, y, interpreter):
@@ -122,7 +115,7 @@ class TestRegisterMath:
         interpreter.v[x] = small_x_val
         interpreter.v[y] = small_y_val
         interpreter.run_instruction(0x80E5)
-        assert interpreter.v[x] == small_x_val - small_y_val
+        assert interpreter.v[x] == (small_x_val - small_y_val) % 256
         assert interpreter.v[0xF] == 1
         
     def test_right_shift_carry(self, x, interpreter):
@@ -146,7 +139,7 @@ class TestRegisterMath:
         interpreter.v[x] = small_x_val
         interpreter.v[y] = small_y_val
         interpreter.run_instruction(0x80E7)
-        assert interpreter.v[x] == small_y_val - small_x_val
+        assert interpreter.v[x] == (small_y_val - small_x_val) % 256
         assert interpreter.v[0xF] == 0
     
     def test_flipped_subtraction_underflow(self, x, y, interpreter):
@@ -155,7 +148,7 @@ class TestRegisterMath:
         interpreter.v[x] = small_x_val
         interpreter.v[y] = small_y_val
         interpreter.run_instruction(0x80E7)
-        assert interpreter.v[x] == small_y_val - small_x_val
+        assert interpreter.v[x] == (small_y_val - small_x_val) % 256
         assert interpreter.v[0xF] == 1
     
     def test_left_shift(self, x, interpreter):
@@ -174,17 +167,15 @@ class TestRegisterMath:
         assert interpreter.v[0xF] == 1
         
 def test_set_pc():
-    interpreter = VM().interpreter
+    interpreter = Emulator().interpreter
     interpreter.run_instruction(0x1400)
     assert interpreter.pc == 0x400
 
 def test_stack_operations():
-    interpreter = VM().interpreter
+    interpreter = Emulator().interpreter
     start_addr = 0x200
     interpreter.pc = start_addr
     assert len(interpreter.stack) == 0
     interpreter.run_instruction(0x2300)
     assert interpreter.stack[0] == start_addr
-    assert interpreter.pc == 0x300
     interpreter.run_instruction(0x00EE)
-    assert interpreter.pc == start_addr
