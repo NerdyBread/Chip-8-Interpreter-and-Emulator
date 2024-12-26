@@ -36,6 +36,7 @@ class Interpreter:
         
     def cycle(self):
         opcode = self.get_next_instruction()
+        self.pc += 2
         self.run_instruction(opcode)
         
     def get_next_instruction(self):
@@ -71,12 +72,10 @@ class Interpreter:
                         # Clear the display
                         self.empty_screen_buffer()
                         self.set_draw_flag(True)
-                        self.pc += 2
                         
                     case (0x00EE): # 0x00EE
                         # Return from current subroutine
-                        self.pc = self.stack.pop() + 2
-                        # Tricky bug, if you don't add the +2 it loops
+                        self.pc = self.stack.pop()
 
             case 0x1000: # 0x1nnn
                 # Set program counter to address nnn
@@ -87,7 +86,7 @@ class Interpreter:
                 self.stack.append(self.pc)
                 # print([hex(val) for val in self.stack])
                 if len(self.stack) > 16:
-                    raise StackError # This theoretically shouldn't happen
+                    raise MemoryError("Stack height cannot exceed 16") # This theoretically shouldn't happen
                 # Most programs don't even use 8 but this is more to be accurate
                 self.pc = addr
                         
@@ -95,30 +94,25 @@ class Interpreter:
                 # Skip next instruction if Vx == kk
                 if self.v[x] == byte:
                     self.pc += 2
-                self.pc += 2
             
             case 0x4000: # 0x4xkk
                 # Skip next instruction if Vx != kk
                 if self.v[x] != byte:
                     self.pc += 2
-                self.pc += 2
             
             case 0x5000: # 0x5xy0
                 # Skip next instruction if Vx == Vy
                 if self.v[x] == self.v[y]:
                     self.pc += 2
-                self.pc += 2
             
             case 0x6000: # 0x6xkk
                 # Set Vx to kk
                 self.v[x] = byte
-                self.pc += 2
                
             case 0x7000: # 0x7xkk
                 """Add value kk to register Vx, there is wraparound when
                 result is greater than 255, i.e. lowest 8 bits are kept"""
                 self.v[x] = (self.v[x] + byte) % 256
-                self.pc += 2
             
             case 0x8000: # 0x8xy?
                 # Some operation with the variables
@@ -173,19 +167,16 @@ class Interpreter:
                         lost_bit = (self.v[x] & 0b10000000) >> 7
                         self.v[x] = (self.v[x] << 1) & 0xFF # Prevent overflow
                         self.v[0xF] = lost_bit
-                self.pc += 2 # Goes up by one instruction no matter the operation
                     
             case 0x9000: # 9xy0
                 # Skip next instruction if Vx != Vy
                 if self.v[x] != self.v[y]:
                     self.pc += 2
-                self.pc += 2
                     
             
             case 0xA000: # Annn
                 # Set I register to nnn
                 self.I = addr
-                self.pc += 2
             
             case 0xB000: # Bnnn
                 # Jump to addr nnn + V0
@@ -193,9 +184,8 @@ class Interpreter:
             
             case 0xC000: # Cxkk
                 # Vx = random byte & kk
-                new_byte = randint(0, 225)
+                new_byte = randint(0, 255)
                 self.v[x] = new_byte & byte
-                self.pc += 2
 
             case 0xD000: # Dxyn
                 # Display n-byte sprite starting at addr in register I at (Vx, Vy), VF = collision
@@ -220,7 +210,6 @@ class Interpreter:
                         new_state = comparison_bit ^ current_bit
                         self.screen_buffer[row_index][x_idx] = new_state
                 self.set_draw_flag(True)
-                self.pc += 2
             
             case 0xE000:
                 match (opcode & 0x00FF):
@@ -229,21 +218,18 @@ class Interpreter:
                         key_idx = self.v[x] & 0xF
                         if self.key_buffer[key_idx]:
                             self.pc += 2
-                        self.pc += 2
                     
                     case 0x00A1: # ExA1
                         # Skip next instruction if key at value Vx isn't pressed
                         key_idx = self.v[x] & 0xF
                         if not self.key_buffer[key_idx]:
                             self.pc += 2
-                        self.pc += 2
             
             case 0xF000:
                 match (opcode & 0x00FF):
                     case 0x0007: # Fx07
                         # Set V[x] to delay timer value
                         self.v[x] = self.machine.get_delay_timer()
-                        self.pc += 2
                     
                     case 0x000A: # Fx0A
                         """
@@ -261,34 +247,33 @@ class Interpreter:
                                 break
                         else:
                             self.stored_key = None
+                            self.pc -= 2
                                 
                         if self.stored_key != None:    
                             # We're waiting for a key release now
                             if self.key_buffer[self.stored_key] == 0:
-                                self.stored_key == None
-                                self.pc += 2
-                        
+                                self.stored_key == None    
+                            else:
+                                self.pc -= 2
+                                
+                        # Decrementing the pc makes this instruction loop                    
                     
                     case 0x0015: # Fx15
                         # Set delay timer to Vx
                         self.machine.set_delay_timer(self.v[x])
-                        self.pc += 2
                     
                     case 0x0018: # Fx18
                         # Set sound timer to Vx
                         self.machine.set_sound_timer(self.v[x])
-                        self.pc += 2
                     
                     case 0x001E: # Fx1E
                         # Add value of Vx to I
                         self.I += self.v[x]
-                        self.pc += 2
                     
                     case 0x0029: # Fx29
                         # Set I to location of sprite for digit Vx
                         digit = self.v[x] & 0xF
                         self.I = digit * 5 # First byte of 5 in memory
-                        self.pc += 2
                     
                     case 0x0033: # Fx33
                         # Store BCD representation of Vx in memory
@@ -300,8 +285,6 @@ class Interpreter:
                         self.memory[self.I] = hundreds // 100
                         self.memory[self.I+1] = tens // 10
                         self.memory[self.I+2] = ones
-                        
-                        self.pc += 2
                     
                     case 0x0055: # Fx55
                         # Store V0 through Vx in memory starting at I
@@ -309,14 +292,12 @@ class Interpreter:
                         while register <= x:
                             self.memory[self.I + register] = self.v[register]
                             register += 1
-                        self.pc += 2
                     
                     case 0x0065: # Fx65
                         # Read memory starting at I into registers V0 through Vx
                         memory_addr = self.I
                         for num in range(x+1):
                             self.v[num] = self.memory[memory_addr + num]
-                        self.pc += 2
                     
     
     def get_addr(self, opcode):
@@ -342,7 +323,4 @@ class Interpreter:
         self.draw_flag = state
         
 class OpcodeNotFound(Exception):
-    pass
-
-class StackError(Exception):
     pass
