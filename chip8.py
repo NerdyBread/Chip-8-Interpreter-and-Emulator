@@ -124,14 +124,17 @@ class Interpreter:
                     case 0x0001: # 0x8xy1
                         # Set Vx = Vx OR Vy
                         self.v[x] |= self.v[y]
+                        self.v[0xF] = 0
                     
                     case 0x0002: # 0x8xy2
                         # Set Vx = Vx AND Vy
                         self.v[x] &= self.v[y]
+                        self.v[0xF] = 0
                     
                     case 0x0003: # 0x8xy3
                          # Set Vx = Vx XOR Vy
                         self.v[x] ^= self.v[y]
+                        self.v[0xF] = 0
 
                     case 0x0004: # 0x8xy4
                         # Add Vx and Vy, VF is carry
@@ -196,7 +199,7 @@ class Interpreter:
                     
                 x_coord = self.v[x]
                 y_coord = self.v[y]
-
+                self.v[0xF] = 0
                 for i, row_index in enumerate(range(y_coord, y_coord+bytes_in_sprite)):
                     # So for each row we want to xor the byte at i with the 8 pixels in that row
                     comparison_byte = sprite[i]
@@ -208,6 +211,8 @@ class Interpreter:
                         row_index %= self.COLUMN_LEN
                         current_bit = self.screen_buffer[row_index][x_idx]
                         new_state = comparison_bit ^ current_bit
+                        if current_bit == 1 and new_state == 0:
+                            self.v[0xF] = 1
                         self.screen_buffer[row_index][x_idx] = new_state
                 self.set_draw_flag(True)
             
@@ -292,13 +297,14 @@ class Interpreter:
                         while register <= x:
                             self.memory[self.I + register] = self.v[register]
                             register += 1
+                        self.I += x + 1 # Quirks
                     
                     case 0x0065: # Fx65
                         # Read memory starting at I into registers V0 through Vx
                         memory_addr = self.I
                         for num in range(x+1):
                             self.v[num] = self.memory[memory_addr + num]
-                    
+                        self.I += x + 1 # Quirks
     
     def get_addr(self, opcode):
         """Return lowest 12 bits of the instruction"""
