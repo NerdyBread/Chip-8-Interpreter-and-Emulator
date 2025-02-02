@@ -1,4 +1,4 @@
-# Chip-8 Interpreter/System Emulator In Python (Hopefully Super-Chip48 Soon)
+# Chip-8 Interpreter/System Emulator In Python
 
 ## Next Steps
 
